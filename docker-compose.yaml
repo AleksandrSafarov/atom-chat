@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: atom_chat
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://user:password@db:5432/atom_chat
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: >
+      sh -c "python atom_chat/manage.py migrate &&
+             if [ ! -f /app/.populated ]; then python atom_chat/populate_db.py && touch /app/.populated; fi &&
+             python atom_chat/manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  postgres_data:
